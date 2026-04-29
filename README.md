@@ -3,7 +3,7 @@
  ## Member:
    Madan B K | AAVASH GAIRE | BIRAT TIMSINA | DARPAN BHATTARAI
 
-*** Important message ***
+** Important message **
 All member must install (opencv-python pillow numpy) packages to run the program
 use this command to install: pip install opencv-python pillow numpy
 
