@@ -1,0 +1,5 @@
+opencv-python==4.13.0
+Pillow==12.2.0
+numpy==2.4.4
+
+# Optional: pin other dev/test deps here
