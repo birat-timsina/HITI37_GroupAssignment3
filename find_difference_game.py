@@ -9,6 +9,93 @@ import math
 #  CLASS 1: DifferenceGenerator
 #  Handles all OpenCV image manipulation
 
+class ImageLoader:
+    """
+    Handles loading images from file paths, validation, and conversion
+    to PhotoImage format for display in Tkinter.
+    Part C: Image Loader Module
+    """
+
+    def __init__(self, file_path):
+        """
+        Load an image from file_path and prepare original and modified copies.
+        
+        Args:
+            file_path (str): Path to the image file (jpg, png, bmp, etc.)
+        
+        Raises:
+            ValueError: If file cannot be loaded or is invalid
+        """
+        if not file_path or not isinstance(file_path, str):
+            raise ValueError("Invalid file path provided")
+        
+        try:
+            # Load image using OpenCV (BGR format)
+            self.original = cv2.imread(file_path)
+            if self.original is None:
+                raise ValueError(f"Could not load image from {file_path}")
+            
+            # Validate image dimensions
+            h, w = self.original.shape[:2]
+            if h < 100 or w < 100:
+                raise ValueError(f"Image too small ({w}x{h}). Minimum 100x100 pixels required.")
+            if h > 4000 or w > 4000:
+                raise ValueError(f"Image too large ({w}x{h}). Maximum 4000x4000 pixels.")
+            
+            # Create a copy for modifications
+            self.modified = self.original.copy()
+            self.differences = []
+            self.file_path = file_path
+            
+        except Exception as e:
+            raise ValueError(f"Error loading image: {str(e)}")
+    
+    @staticmethod
+    def cv2_to_photoimage(cv_image, max_width=500, max_height=400):
+        """
+        Convert OpenCV BGR image to Tkinter PhotoImage, scaling to fit bounds.
+        
+        Args:
+            cv_image (np.ndarray): OpenCV image in BGR format
+            max_width (int): Maximum display width
+            max_height (int): Maximum display height
+        
+        Returns:
+            tuple: (PhotoImage object, scale_factor)
+        """
+        try:
+            # Get original dimensions
+            h, w = cv_image.shape[:2]
+            
+            # Calculate scale to fit within max bounds while preserving aspect ratio
+            scale = min(max_width / w, max_height / h, 1.0)
+            
+            # Resize if needed
+            if scale < 1.0:
+                new_w = int(w * scale)
+                new_h = int(h * scale)
+                scaled = cv2.resize(cv_image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            else:
+                scaled = cv_image
+                scale = 1.0
+            
+            # Convert BGR to RGB
+            rgb = cv2.cvtColor(scaled, cv2.COLOR_BGR2RGB)
+            
+            # Convert to PIL Image then Tkinter PhotoImage
+            pil_image = Image.fromarray(rgb)
+            photo = ImageTk.PhotoImage(pil_image)
+            
+            return photo, scale
+            
+        except Exception as e:
+            raise ValueError(f"Error converting image to PhotoImage: {str(e)}")
+
+
+# Alias for backwards compatibility
+ImageProcessor = ImageLoader
+
+
 class DifferenceGenerator:
     """
     Responsible for creating and tracking programmatic
@@ -131,81 +218,86 @@ class FindDiffGame(tk.Tk):
                         cursor="crosshair")
         self.canvas_mod.grid(row=1, column=1, padx=5)
 
-        self.canvas_mod.bind("<Button-1>", self._on_canvas_click)
-
-        self._original_photo = None
-        self._modified_photo = None
-        self._source_image = None
-        self._display_image_size = (self.image_width, self.image_height)
-
-        self._refresh_status("Load an image to start.")
-
-    def _refresh_status(self, message=None):
-        remaining_text = self.total_remaining if self.total_remaining else "–"
-        self.lbl_remaining.config(text=f"Remaining: {remaining_text}")
-        self.lbl_mistakes.config(text=f"Mistakes: {self.mistakes} / {self.MAX_MISTAKES}")
-        if message is not None:
-            self.lbl_msg.config(text=message)
-
-    def _show_on_canvas(self, canvas, pil_image, attr_name):
-        canvas_width = int(canvas.cget("width"))
-        canvas_height = int(canvas.cget("height"))
-        display_image = pil_image.copy()
-        display_image.thumbnail((canvas_width, canvas_height), Image.Resampling.LANCZOS)
-
-        photo = ImageTk.PhotoImage(display_image)
-        canvas.delete("all")
-        canvas.create_image(canvas_width // 2, canvas_height // 2, image=photo, anchor="center")
-        setattr(self, attr_name, photo)
-        self._display_image_size = display_image.size
+        # Bind clicks on the modified image canvas to handle guesses. Note:
+        # clicks arrive in canvas/display coordinates; they are converted to
+        # original image coordinates in `_on_click` by dividing by
+        # `self.display_scale` so the hit-testing uses the true pixel values.
+        self.canvas_mod.bind("<Button-1>", self._on_click)
 
     def _load_image(self):
-        image_path = filedialog.askopenfilename(
-            title="Select an image",
-            filetypes=[
-                ("Image files", "*.png *.jpg *.jpeg *.bmp *.gif"),
-                ("All files", "*.*"),
-            ],
+        path = filedialog.askopenfilename(
+            title="Choose an image",
+            filetypes=[("Images", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")]
         )
-        if not image_path:
+        if not path:
             return
 
+        # Load the image and create ImageProcessor which generates differences.
+        # `ImageProcessor` reads the image and creates a `modified` version with
+        # synthetic alterations. The `differences` list is populated with
+        # `DifferenceRegion` objects describing altered patches.
         try:
-            source = Image.open(image_path).convert("RGB")
-        except Exception as exc:
-            messagebox.showerror("Load Image", f"Could not open image:\n{exc}")
+            self.processor = ImageProcessor(path)
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
             return
 
-        self._source_image = source
-        self.processor = DifferenceGenerator()
+        # Reset game state for the new image
         self.mistakes = 0
-        self.total_remaining = 0
         self.game_over = False
 
-        self._show_on_canvas(self.canvas_orig, source, "_original_photo")
-        self._show_on_canvas(self.canvas_mod, source, "_modified_photo")
-        self._refresh_status("Image loaded. UI is ready.")
+        # Create drawing overlays so we can mark found/revealed differences.
+        # We copy the images so marking (drawing circles) does not mutate the
+        # original images stored by the processor; overlays are used purely for
+        # display and are reset each time a new image is loaded.
+        h, w = self.processor.original.shape[:2]
+        self.orig_overlay = self.processor.original.copy()
+        self.mod_overlay  = self.processor.modified.copy()
 
-    def _reveal_all(self):
-        if self._source_image is None:
-            self._refresh_status("Load an image first.")
-            return
+        # Update the UI to show the loaded image and reset labels. This will
+        # convert the overlays into Tk PhotoImage objects scaled to fit the
+        # canvas, and store `self.display_scale` so clicks map correctly.
+        self._refresh_display()
+        self._update_labels()
+        self.lbl_msg.config(text="Click on the right image to find differences!")
 
-        self.game_over = True
-        self._refresh_status("Reveal mode is available after difference generation.")
+    def _refresh_display(self):
+        max_w = 500
+        max_h = 400
 
-    def _on_canvas_click(self, event):
-        if self._source_image is None:
-            self._refresh_status("Load an image before clicking.")
-            return
+        # Convert OpenCV images to PhotoImage with scaling to fit the UI. The
+        # helper returns a `PhotoImage` and the numeric `scale` applied. We
+        # store that scale to later map canvas click coordinates back to the
+        # original image pixel coordinates.
+        photo_orig, scale = ImageProcessor.cv2_to_photoimage(
+            self.orig_overlay, max_w, max_h)
+        self.display_scale = scale
 
-        self._refresh_status(f"Clicked at ({event.x}, {event.y}). UI preview only.")
+        # Note: `shape` returns (height, width). We compute the scaled display
+        # dimensions by multiplying by the `scale` factor returned above.
+        disp_h, disp_w = self.orig_overlay.shape[:2]
+        disp_w_scaled = int(disp_w * scale)
+        disp_h_scaled = int(disp_h * scale)
 
+        # Configure the canvas to the new size and draw the image. It's
+        # important to store a reference to the `PhotoImage` on the canvas
+        # object (e.g., `self.canvas_orig.image`) to prevent Python's garbage
+        # collector from reclaiming it; Tk will otherwise display a blank box.
+        self.canvas_orig.config(width=disp_w_scaled, height=disp_h_scaled)
+        self.canvas_orig.delete("all")
+        self.canvas_orig.create_image(0, 0, anchor=tk.NW, image=photo_orig)
+        self.canvas_orig.image = photo_orig
 
-if __name__ == "__main__":
-    app = FindDiffGame()
-    app.mainloop()
+        # Modified image uses the same scale; create and retain its PhotoImage
+        # reference for the same GC reason.
+        photo_mod, _ = ImageProcessor.cv2_to_photoimage(
+            self.mod_overlay, max_w, max_h)
+        self.canvas_mod.config(width=disp_w_scaled, height=disp_h_scaled)
+        self.canvas_mod.delete("all")
+        self.canvas_mod.create_image(0, 0, anchor=tk.NW, image=photo_mod)
+        self.canvas_mod.image = photo_mod
 
+# ==================== End of Part-C ====================
 
 
 
