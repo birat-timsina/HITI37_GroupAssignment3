@@ -435,4 +435,32 @@ class FindDiffGame(tk.Tk):
             messagebox.showinfo("Well done!",
                                 "You found all 5 differences! 🎉\nLoad a new image to play again.")
 
+    #function to register mistake clicks
+    def _register_mistake(self):
+        #mistake counter
+        self.mistakes += 1
+        self._update_labels()
+
+        #count remaining not found differences
+        remaining = sum(1 for d in self.processor.differences if not d.found)
+
+        #check if max mistake reached
+        if self.mistakes >= self.MAX_MISTAKES:
+            #end game
+            self.game_over = True
+            #update message label
+            self.lbl_msg.config(text="❌ Too many mistakes! Load a new image.")
+            
+            #show game over popup with game stats
+            messagebox.showwarning(
+                "Game Over",
+                f"You made {self.MAX_MISTAKES} mistakes!\n"
+                f"Differences found: {ImageProcessor.NUM_DIFFERENCES - remaining} / "
+                f"{ImageProcessor.NUM_DIFFERENCES}\n\n"
+                "Load a new image to restart."
+            )
+        else:
+            #show remaining mistakes left
+            self.lbl_msg.config(
+                text=f"✘ Wrong! {self.MAX_MISTAKES - self.mistakes} mistake(s) left.")
 
