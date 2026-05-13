@@ -156,6 +156,48 @@ class DifferenceRegion:
         return max(self.w, self.h) // 2 + 15
 
 
+class ImageProcessor:
+
+    # Total number of differences to generate
+    NUM_DIFFERENCES = 5
+
+    # Constructor prepare modified version and also to load image
+    def __init__(self, image_path):
+
+        # By Using OpenCV load the orginal image
+        self.original = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+        # If image cannot be loaded then raise a error
+        if self.original is None:
+            raise ValueError(f"Could not open image: {image_path}")
+
+        # Store Image dimensions 
+        self.height, self.width = self.original.shape[:2]
+
+        # Create modifications for a copy of orginal image
+        self.modified = self.original.copy()
+
+        # List all generated differences to be store
+        self.differences = []
+
+        # Generate differences on image automatically
+        self._generate_differences()
+
+    # Flip image patch horizontally
+    def _apply_flip(self, patch):
+        return cv2.flip(patch, 1)
+
+    # Convert from greyscale to image patch
+    def _apply_greyscale(self, patch):
+
+        # Convert BGR image into from grayscale to BGR image    
+        grey = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+
+        # Convert from BGR format for consistency to grayscale back
+        return cv2.cvtColor(grey, cv2.COLOR_GRAY2BGR)
+
+
+
 # ==================== Part-C: FindDiffGame Constructor + UI Builder + Image Loader + Display Refresh ====================
 
 class FindDiffGame(tk.Tk):
