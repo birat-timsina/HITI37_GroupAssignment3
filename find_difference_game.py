@@ -383,5 +383,30 @@ def _update_labels(self):
         self.lbl_mistakes.config(text=f"Mistakes: {self.mistakes} / {self.MAX_MISTAKES}")
 
 
+#function to interact when user clicks on modified image
+def _on_click(self, event):
+        #stops func if there is no image processor or game is already over
+        if self.processor is None or self.game_over:
+            return
+
+        #convert displayed image coordinates back to original image coordinates by dividing by display scale
+        orig_x = int(event.x / self.display_scale)
+        orig_y = int(event.y / self.display_scale)
+
+        #variable to store found differences
+        hit = None
+        
+        for diff in self.processor.differences:
+            #check if the difference is not already found and if the click within difference region
+            if not diff.found and diff.contains(orig_x, orig_y):
+                hit = diff
+                break
+        
+        #if hit found, mark it as found and update display
+        if hit:
+            self._mark_found(hit)
+        else:
+            #otherwise, register a mistake and update labels
+            self._register_mistake()
 
 
