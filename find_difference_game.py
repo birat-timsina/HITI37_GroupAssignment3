@@ -464,3 +464,30 @@ class FindDiffGame(tk.Tk):
             self.lbl_msg.config(
                 text=f"✘ Wrong! {self.MAX_MISTAKES - self.mistakes} mistake(s) left.")
 
+    #function to reveal all differences
+    def _reveal_all(self):
+        #stops if image is not loaded and shows warning popup
+        if self.processor is None:
+            messagebox.showinfo("No image", "Please load an image first.")
+            return
+
+        #reveal counter
+        revealed = 0
+        for diff in self.processor.differences:
+            #rveal differences that are not already found
+            if not diff.found:
+                #get center coordinates and radius of difference region
+                cx, cy = diff.centre()
+                r = diff.radius()
+                #draw blue circles on both original and modified images to mark revealed differences
+                cv2.circle(self.orig_overlay, (cx, cy), r, (255, 0, 0), 3)
+                cv2.circle(self.mod_overlay,  (cx, cy), r, (255, 0, 0), 3)
+                #increase revealed counter
+                revealed += 1
+
+        #refresh image display
+        self._refresh_display()
+        #end game
+        self.game_over = True
+        #updae label and show status message
+        self.lbl_msg.config(text=f"👁 Revealed {revealed} difference(s). Load a new image.")
