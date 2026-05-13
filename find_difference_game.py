@@ -369,6 +369,19 @@ class FindDiffGame(tk.Tk):
 
 # ==================== End of Part-C ====================
 
+#Part - D
+#func to update labels for remaining differences and mistakes
+def _update_labels(self):
+        #stops func if there is no image processor
+        if self.processor is None:
+            return  
+        
+        #count no. of differences that are not found
+        remaining = sum(1 for d in self.processor.differences if not d.found)
+        #update remaining differences and mistakes label
+        self.lbl_remaining.config(text=f"Remaining: {remaining}")
+        self.lbl_mistakes.config(text=f"Mistakes: {self.mistakes} / {self.MAX_MISTAKES}")
+
 
 
 
