@@ -123,9 +123,37 @@ class DifferenceGenerator:
 
 
 
+#part A
 
+class DifferenceRegion:
 
+    # Minimum Size allowed for a difference region
+    MIN_SIZE = 30
 
+    # Maximum size allowed for a difference region
+    MAX_SIZE = 70
+
+    #  Initialize construtor in a difference region
+    def __init__(self, x, y, w, h, diff_type):
+        self.x = x                  # X-coordinate of region
+        self.y = y                  # Y-coordinate of region
+        self.w = w                  # Width of region
+        self.h = h                  # Height of region
+        self.diff_type = diff_type  # Type of alteration applied
+        self.found = False          # Tracks whether player found this difference
+
+    # Check whether adifference region's mouse falls inside or not
+    def contains(self, px, py, tolerance=20):
+        return (self.x - tolerance <= px <= self.x + self.w + tolerance and
+                self.y - tolerance <= py <= self.y + self.h + tolerance)
+
+    # Return the centre point of the region
+    def centre(self):
+        return (self.x + self.w // 2, self.y + self.h // 2)
+
+    # Return drawing highlight circles for a suitable radius
+    def radius(self):
+        return max(self.w, self.h) // 2 + 15
 
 
 # ==================== Part-C: FindDiffGame Constructor + UI Builder + Image Loader + Display Refresh ====================
