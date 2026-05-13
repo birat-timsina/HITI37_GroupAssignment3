@@ -370,8 +370,8 @@ class FindDiffGame(tk.Tk):
 # ==================== End of Part-C ====================
 
 #Part - D
-#func to update labels for remaining differences and mistakes
-def _update_labels(self):
+    #func to update labels for remaining differences and mistakes
+    def _update_labels(self):
         #stops func if there is no image processor
         if self.processor is None:
             return  
@@ -383,8 +383,8 @@ def _update_labels(self):
         self.lbl_mistakes.config(text=f"Mistakes: {self.mistakes} / {self.MAX_MISTAKES}")
 
 
-#function to interact when user clicks on modified image
-def _on_click(self, event):
+    #function to interact when user clicks on modified image
+    def _on_click(self, event):
         #stops func if there is no image processor or game is already over
         if self.processor is None or self.game_over:
             return
@@ -408,5 +408,31 @@ def _on_click(self, event):
         else:
             #otherwise, register a mistake and update labels
             self._register_mistake()
+
+    #function to register mistakes when user clicks incorrectly
+    def _mark_found(self, diff):
+        #set difference as found
+        diff.found = True
+        #get center of coordinates of difference region
+        cx, cy = diff.centre()
+        r = diff.radius() #get radius
+
+        #draws red circle on both original and modified images to mark found difference
+        cv2.circle(self.orig_overlay, (cx, cy), r, (0, 0, 255), 3)
+        cv2.circle(self.mod_overlay,  (cx, cy), r, (0, 0, 255), 3)
+
+        #update remaining, differences and mistakes labels
+        self._refresh_display()
+        self._update_labels()
+        #show message for difference found with its type
+        self.lbl_msg.config(text=f"✔ Found! ({diff.diff_type})")
+
+        #checks if all differences are found
+        if all(d.found for d in self.processor.differences):
+            #game end
+            self.game_over = True
+            #display congratulation popup message
+            messagebox.showinfo("Well done!",
+                                "You found all 5 differences! 🎉\nLoad a new image to play again.")
 
 
