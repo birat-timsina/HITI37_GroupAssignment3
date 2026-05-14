@@ -239,7 +239,43 @@ class ImageProcessor:
                     y > d.y + d.h + margin):
                 return True
         return False
-        
+
+    # Generate all the differences on the image   
+    def _generate_differences(self):
+        # List of all the alteration methods
+        alteration_methods = [
+            ('flip',             self._apply_flip),
+            ('greyscale',        self._apply_greyscale),
+            ('brightness',       self._apply_brightness),
+            ('rectangle_block',  self._apply_rectangle_block),
+            ('colour_shift',     self._apply_colour_shift),
+        ]
+
+        # Counter to avoid infinite loops while generating differences
+        attempts = 0
+
+        # Loop for generating the required number of differences
+        while len(self.differences) < self.NUM_DIFFERENCES and attempts < 500:
+            attempts += 1
+
+            # Get random region with minimum size
+            x, y, w, h = self._random_region()
+
+            # Skip if region overlaps with existing differences
+            if self._overlaps_existing(x, y, w, h):
+                continue
+
+            diff_type, method = random.choice(alteration_methods)
+
+            # Apply the selected alteration to the region
+            patch = self.original[y:y+h, x:x+w].copy()
+            altered = method(patch)
+            # Modify the image with the altered region
+            self.modified[y:y+h, x:x+w] = altered
+
+            # Store the difference region
+            self.differences.append(DifferenceRegion(x, y, w, h, diff_type))
+
 
 
 
