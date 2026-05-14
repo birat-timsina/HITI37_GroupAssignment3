@@ -230,6 +230,16 @@ class ImageProcessor:
         y = random.randint(10, self.height - h - 10)
         return x, y, w, h
 
+    # Check overlap with existing regions
+    def _overlaps_existing(self, x, y, w, h, margin=20):
+        for d in self.differences:
+            if not (x + w + margin < d.x or
+                    x > d.x + d.w + margin or
+                    y + h + margin < d.y or
+                    y > d.y + d.h + margin):
+                return True
+        return False
+        
 
 
 
