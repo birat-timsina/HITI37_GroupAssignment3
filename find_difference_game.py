@@ -276,8 +276,27 @@ class ImageProcessor:
             # Store the difference region
             self.differences.append(DifferenceRegion(x, y, w, h, diff_type))
 
+    # Convert OpenCV image to PhotoImage with resizing
+    @staticmethod
+    def cv2_to_photoimage(cv_img, max_width=300, max_height=200):
 
+        # Convert from OpenCV's BGR format to RGB for PIL
+        rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+        h, w = rgb.shape[:2]
 
+        # Calculate scaling factor to fit within bounds while maintaining aspect ratio
+        scale = min(max_width / w, max_height / h, 1.0)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        
+        # Resize the image using area interpolation for better quality
+        resized = cv2.resize(rgb, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        # Convert the resized image to a PIL Image
+        pil_img = Image.fromarray(resized)
+        # Return the PhotoImage and the scaling factor
+        return ImageTk.PhotoImage(pil_img), scale
+
+# ==================== End of Part-B ==================== 
 
 # ==================== Part-C: FindDiffGame Constructor + UI Builder + Image Loader + Display Refresh ====================
 
