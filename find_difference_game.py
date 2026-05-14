@@ -221,7 +221,14 @@ class ImageProcessor:
         x2, y2 = 3 * w // 4, 3 * h // 4
         cv2.rectangle(result, (x1, y1), (x2, y2), (255, 255, 0), thickness=-1)
         return result
-
+    
+    # Generate random region for difference
+    def _random_region(self):
+        w = random.randint(DifferenceRegion.MIN_SIZE, DifferenceRegion.MAX_SIZE)
+        h = random.randint(DifferenceRegion.MIN_SIZE, DifferenceRegion.MAX_SIZE)
+        x = random.randint(10, self.width - w - 10)
+        y = random.randint(10, self.height - h - 10)
+        return x, y, w, h
 
 
 
