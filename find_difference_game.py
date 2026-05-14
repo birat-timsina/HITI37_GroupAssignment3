@@ -1,129 +1,12 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
+import tkinter as tk
+from tkinter import filedialog, messagebox
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
 import random
-import math
 
-#  CLASS 1: DifferenceGenerator
-#  Handles all OpenCV image manipulation
-
-class ImageLoader:
-    """
-    Handles loading images from file paths, validation, and conversion
-    to PhotoImage format for display in Tkinter.
-    Part C: Image Loader Module
-    """
-
-    def __init__(self, file_path):
-        """
-        Load an image from file_path and prepare original and modified copies.
-        
-        Args:
-            file_path (str): Path to the image file (jpg, png, bmp, etc.)
-        
-        Raises:
-            ValueError: If file cannot be loaded or is invalid
-        """
-        if not file_path or not isinstance(file_path, str):
-            raise ValueError("Invalid file path provided")
-        
-        try:
-            # Load image using OpenCV (BGR format)
-            self.original = cv2.imread(file_path)
-            if self.original is None:
-                raise ValueError(f"Could not load image from {file_path}")
-            
-            # Validate image dimensions
-            h, w = self.original.shape[:2]
-            if h < 100 or w < 100:
-                raise ValueError(f"Image too small ({w}x{h}). Minimum 100x100 pixels required.")
-            if h > 4000 or w > 4000:
-                raise ValueError(f"Image too large ({w}x{h}). Maximum 4000x4000 pixels.")
-            
-            # Create a copy for modifications
-            self.modified = self.original.copy()
-            self.differences = []
-            self.file_path = file_path
-            
-        except Exception as e:
-            raise ValueError(f"Error loading image: {str(e)}")
-    
-    @staticmethod
-    def cv2_to_photoimage(cv_image, max_width=500, max_height=400):
-        """
-        Convert OpenCV BGR image to Tkinter PhotoImage, scaling to fit bounds.
-        
-        Args:
-            cv_image (np.ndarray): OpenCV image in BGR format
-            max_width (int): Maximum display width
-            max_height (int): Maximum display height
-        
-        Returns:
-            tuple: (PhotoImage object, scale_factor)
-        """
-        try:
-            # Get original dimensions
-            h, w = cv_image.shape[:2]
-            
-            # Calculate scale to fit within max bounds while preserving aspect ratio
-            scale = min(max_width / w, max_height / h, 1.0)
-            
-            # Resize if needed
-            if scale < 1.0:
-                new_w = int(w * scale)
-                new_h = int(h * scale)
-                scaled = cv2.resize(cv_image, (new_w, new_h), interpolation=cv2.INTER_AREA)
-            else:
-                scaled = cv_image
-                scale = 1.0
-            
-            # Convert BGR to RGB
-            rgb = cv2.cvtColor(scaled, cv2.COLOR_BGR2RGB)
-            
-            # Convert to PIL Image then Tkinter PhotoImage
-            pil_image = Image.fromarray(rgb)
-            photo = ImageTk.PhotoImage(pil_image)
-            
-            return photo, scale
-            
-        except Exception as e:
-            raise ValueError(f"Error converting image to PhotoImage: {str(e)}")
-
-
-# Alias for backwards compatibility
-ImageProcessor = ImageLoader
-
-
-class DifferenceGenerator:
-    """
-    Responsible for creating and tracking programmatic
-    image differences using OpenCV.
-    Demonstrates encapsulation of image-processing logic.
-    """
-
-    MIN_SIZE = 30
-    MAX_SIZE = 70
-    NUM_DIFFERENCES = 5
-
-    def __init__(self):
-        self.differences = []   # list of (x, y, w, h) bounding boxes
-        self.alteration_types = [
-            self._colour_shift,
-            self._brightness_patch,
-            self._blur_patch,
-            self._invert_patch,
-            self._tint_patch,
-        ]
-
-
-
-
-
-
-
-#part A
 
 class DifferenceRegion:
 
@@ -197,9 +80,7 @@ class ImageProcessor:
         return cv2.cvtColor(grey, cv2.COLOR_GRAY2BGR)
 
 
-# Part B Remaining alteration  + Region Helpers + Difference Generator + Image Converter ===================
-    # Remaining alterations
-    
+   
     def _apply_brightness(self, patch):
         # Convert patch brightness
         brighter = patch.astype(np.int32) + 80
@@ -296,9 +177,7 @@ class ImageProcessor:
         # Return the PhotoImage and the scaling factor
         return ImageTk.PhotoImage(pil_img), scale
 
-# ==================== End of Part-B ==================== 
 
-# ==================== Part-C: FindDiffGame Constructor + UI Builder + Image Loader + Display Refresh ====================
 
 class FindDiffGame(tk.Tk):
 
@@ -467,9 +346,7 @@ class FindDiffGame(tk.Tk):
         self.canvas_mod.create_image(0, 0, anchor=tk.NW, image=photo_mod)
         self.canvas_mod.image = photo_mod
 
-# ==================== End of Part-C ====================
 
-#Part - D
     #func to update labels for remaining differences and mistakes
     def _update_labels(self):
         #stops func if there is no image processor
