@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image, ImageTk
 import random
 
-
+#class for generate difference's region
 class DifferenceRegion:
 
     # Minimum Size allowed for a difference region
@@ -468,3 +468,8 @@ class FindDiffGame(tk.Tk):
         self.game_over = True
         #updae label and show status message
         self.lbl_msg.config(text=f"👁 Revealed {revealed} difference(s). Load a new image.")
+
+#main function to run program
+if __name__ == "__main__":
+    app = FindDiffGame()
+    app.mainloop()
