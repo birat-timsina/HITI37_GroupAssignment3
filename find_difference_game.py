@@ -311,7 +311,7 @@ class FindDiffGame(tk.Tk):
 
         # Initialize game state variables
         
-        self.processor = DifferenceGenerator()     # `processor`: manages generated image differences
+        self.processor = None     # `processor`: set to ImageProcessor once an image is loaded
         self.mistakes = 0       # `mistakes`: count of incorrect clicks by the player
         self.total_remaining = 0     # `total_remaining`: helper counter for differences remaining (kept for clarity)
         self.game_over = False   # `game_over`: when True, input is ignored until a new image is loaded
