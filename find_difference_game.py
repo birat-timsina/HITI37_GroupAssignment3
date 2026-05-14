@@ -197,6 +197,34 @@ class ImageProcessor:
         return cv2.cvtColor(grey, cv2.COLOR_GRAY2BGR)
 
 
+# Part B Remaining alteration  + Region Helpers + Difference Generator + Image Converter ===================
+    # Remaining alterations
+    
+    def _apply_brightness(self, patch):
+        # Convert patch brightness
+        brighter = patch.astype(np.int32) + 80
+        return np.clip(brighter, 0, 255).astype(np.uint8)
+
+    # apply hue shift to the image patch    
+    def _apply_colour_shift(self, patch):
+        # Convert BGR image into from HSI for colour consistency
+        hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV).astype(np.int32)
+        hsv[:, :, 0] = (hsv[:, :, 0] + 40) % 180
+        # Convert from BGR format for consistency to HSI image back
+        return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+
+    # Apply a rectangular block to the image patch   
+    def _apply_rectangle_block(self, patch):
+        result = patch.copy()
+        h, w = result.shape[:2]
+        x1, y1 = w // 4, h // 4
+        x2, y2 = 3 * w // 4, 3 * h // 4
+        cv2.rectangle(result, (x1, y1), (x2, y2), (255, 255, 0), thickness=-1)
+        return result
+
+
+
+
 
 # ==================== Part-C: FindDiffGame Constructor + UI Builder + Image Loader + Display Refresh ====================
 
